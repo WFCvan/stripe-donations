@@ -3,7 +3,7 @@ import Stripe from "stripe";
 export default async function handler(req, res) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-  // ✅ Allow GET safely (prevents crash when testing in browser)
+  // ✅ Test endpoint in browser
   if (req.method === "GET") {
     return res.status(200).json({ status: "API is working ✅" });
   }
@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   try {
     const body = req.body || {};
 
-    const amount = Number(body.amount || 10); // fallback prevents crash
+    const amount = Number(body.amount || 10);
     const type = body.type || "one_off";
     const name = body.name || "Anonymous";
     const email = body.email || "test@test.com";
@@ -37,8 +37,10 @@ export default async function handler(req, res) {
                   : "One-off Donation",
             },
             unit_amount: Math.round(amount * 100),
+
+            // ✅ FIXED LINE HERE
             ...(type === "monthly" && {
-              recurring: { interval: "month" },
+              recurring: { interval: "month" }
             }),
           },
           quantity: 1,
@@ -64,4 +66,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: err.message });
   }
 }
-``
