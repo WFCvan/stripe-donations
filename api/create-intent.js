@@ -56,7 +56,7 @@ export default async function handler(req, res) {
         customer: customer.id,
         items: [{ price: price.id }],
         payment_behavior: "default_incomplete",
-        payment_settings: { save_default_payment_method: "on_subscription" },
+        payment_settings: { save_default_payment_method: "on_subscription", payment_method_types: ["card"] },
         expand: ["latest_invoice.payment_intent"],
         metadata
       });
@@ -69,7 +69,7 @@ export default async function handler(req, res) {
     const pi = await stripe.paymentIntents.create({
       amount: cents,
       currency: "nzd",
-      automatic_payment_methods: { enabled: true },
+      payment_method_types: ["card"],
       receipt_email: metadata.email || undefined,
       description: "Donation — Waikato Family Centre",
       metadata
