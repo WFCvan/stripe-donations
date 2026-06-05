@@ -3,16 +3,16 @@
    Powers the IN-WIDGET card field (Stripe Payment Element). Creates a
    PaymentIntent (one-off) or Subscription (monthly) and returns a
    clientSecret. No redirect — card is entered on your page.
-
+ 
    Place at:  /api/create-intent.js   (same folder as create-session.js)
    Reuses your existing STRIPE_SECRET_KEY env var. Nothing else to set here.
    ===================================================================== */
-
+ 
 import Stripe from "stripe";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
+ 
 const ALLOW_ORIGIN = "*"; // or lock to "https://www.waikatofamilycentre.co.nz"
-
+ 
 export default async function handler(req, res) {
   // Allow your website to call this endpoint (CORS)
   res.setHeader("Access-Control-Allow-Origin", ALLOW_ORIGIN);
@@ -20,14 +20,14 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-
+ 
   try {
     const b = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
     const cents = Math.round(Number(b.total != null ? b.total : b.amount) * 100);
     if (!Number.isFinite(cents) || cents < 100) {
       return res.status(400).json({ error: "Invalid amount" });
     }
-
+ 
     const det = b.details || {};
     const metadata = {
       name: b.name || ((det.firstName || "") + " " + (det.lastName || "")).trim(),
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
       coverFees: b.coverFees ? "yes" : "no",
       giftType: b.type || ""
     };
-
+ 
     // MONTHLY → subscription
     if (b.type === "monthly") {
       const customer = await stripe.customers.create({
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
       if (!pi) return res.status(400).json({ error: "Could not create subscription payment" });
       return res.status(200).json({ clientSecret: pi.client_secret, mode: "subscription" });
     }
-
+ 
     // ONE-OFF → payment intent
     const pi = await stripe.paymentIntents.create({
       amount: cents,
@@ -80,3 +80,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: err.message || "Server error" });
   }
 }
+ 
